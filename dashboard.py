@@ -5,7 +5,7 @@ import altair as alt
 import seaborn as sns
 import matplotlib.pyplot as plt
 # Set page title
-st.title('Enhanced Dashboard with Streamlit')
+st.title('Enhanced Dashboard')
 # File upload
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
