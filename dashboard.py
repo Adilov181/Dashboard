@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Set page title
 st.title('Enhanced Dashboard with Streamlit')
@@ -9,12 +11,12 @@ st.title('Enhanced Dashboard with Streamlit')
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
     try:
-        data = pd.read_csv(uploaded_file)       
+        data = pd.read_csv(uploaded_file)        
         # Check if the 'Date' column is present
         if 'Date' not in data.columns:
             st.error("The CSV file must contain a 'Date' column.")
         else:
-            data['Date'] = pd.to_datetime(data['Date'])           
+            data['Date'] = pd.to_datetime(data['Date'])       
             # Sidebar filters
             st.sidebar.header('Filters')
             date_filter = st.sidebar.date_input('Select a date range', [data['Date'].min(), data['Date'].max()])
@@ -33,25 +35,40 @@ if uploaded_file is not None:
                 if not numerical_columns.any():
                     st.error("The CSV file must contain numerical columns for visualization.")
                 else:
-                    selected_column = st.sidebar.selectbox("Select a column to visualize", numerical_columns)                 
+                    selected_column = st.sidebar.selectbox("Select a column to visualize", numerical_columns)
+                    chart_type = st.sidebar.selectbox(
+                        "Select Chart Type",
+                        ["Line Chart", "Bar Chart", "Pie Chart", "Heatmap"]
+                    )                  
                     # Main panel
                     st.subheader('Summary Metrics')
                     st.metric(label="Average", value=filtered_data[selected_column].mean())
                     st.metric(label="Sum", value=filtered_data[selected_column].sum())
                     st.metric(label="Max", value=filtered_data[selected_column].max())
-                    st.metric(label="Min", value=filtered_data[selected_column].min())                
-                    st.subheader('Line Chart')
-                    line_chart = alt.Chart(filtered_data).mark_line().encode(
-                        x='Date:T',
-                        y=selected_column
-                    )
-                    st.altair_chart(line_chart, use_container_width=True)
-                    st.subheader('Bar Chart')
-                    bar_chart = alt.Chart(filtered_data).mark_bar().encode(
-                        x='Date:T',
-                        y=selected_column
-                    )
-                    st.altair_chart(bar_chart, use_container_width=True)
+                    st.metric(label="Min", value=filtered_data[selected_column].min())
+                    st.subheader(chart_type)
+                    if chart_type == "Line Chart":
+                        line_chart = alt.Chart(filtered_data).mark_line().encode(
+                            x='Date:T',
+                            y=selected_column
+                        )
+                        st.altair_chart(line_chart, use_container_width=True)
+                    elif chart_type == "Bar Chart":
+                        bar_chart = alt.Chart(filtered_data).mark_bar().encode(
+                            x='Date:T',
+                            y=selected_column
+                        )
+                        st.altair_chart(bar_chart, use_container_width=True)
+                    elif chart_type == "Pie Chart":
+                        pie_data = filtered_data.groupby('Date').sum().reset_index()
+                        plt.figure(figsize=(10, 6))
+                        plt.pie(pie_data[selected_column], labels=pie_data['Date'], autopct='%1.1f%%')
+                        st.pyplot(plt)
+                    elif chart_type == "Heatmap":
+                        heatmap_data = filtered_data.pivot_table(index='Date', values=selected_column, aggfunc='sum')
+                        plt.figure(figsize=(10, 6))
+                        sns.heatmap(heatmap_data, annot=True, fmt="g", cmap='viridis')
+                        st.pyplot(plt)
                     st.subheader('Statistics')
                     st.write(filtered_data.describe())
                     # Download filtered data
