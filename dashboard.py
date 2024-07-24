@@ -4,8 +4,10 @@ import numpy as np
 import altair as alt
 import seaborn as sns
 import matplotlib.pyplot as plt
+from fpdf import FPDF
+import imgkit
 # Set page title
-st.title('Enhanced Dashboard')
+st.title('Enhanced Dashboard with Streamlit')
 # File upload
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
@@ -15,13 +17,14 @@ if uploaded_file is not None:
         if 'Date' not in data.columns:
             st.error("The CSV file must contain a 'Date' column.")
         else:
-            data['Date'] = pd.to_datetime(data['Date'])        
+            data['Date'] = pd.to_datetime(data['Date'])            
             # Sidebar filters
             st.sidebar.header('Filters')
             date_filter = st.sidebar.date_input('Select a date range', [data['Date'].min(), data['Date'].max()])
             # Ensure the date_filter is a list of datetime objects
             if isinstance(date_filter, list) and len(date_filter) == 2:
                 start_date, end_date = date_filter[0], date_filter[1]
+                st.sidebar.write(f"Selected date range: {start_date} to {end_date}")
             else:
                 start_date, end_date = data['Date'].min(), data['Date'].max()
             # Filter data based on date range
@@ -53,12 +56,13 @@ if uploaded_file is not None:
                     }
                     st.table(pd.DataFrame(summary_metrics))
                     st.subheader('Statistics')
-                    st.write(filtered_data.describe())                    
+                    st.write(filtered_data.describe())                  
                     # Display selected charts
                     chart_cols = st.columns(len(chart_types))                    
                     for idx, chart_type in enumerate(chart_types):
                         with chart_cols[idx]:
-                            st.subheader(chart_type)                            
+                            st.subheader(chart_type)
+                            
                             if chart_type == "Line Chart":
                                 line_chart = alt.Chart(filtered_data).mark_line().encode(
                                     x='Date:T',
@@ -85,11 +89,33 @@ if uploaded_file is not None:
                     st.subheader('Download Data')
                     csv = filtered_data.to_csv(index=False)
                     st.download_button(label="Download CSV", data=csv, file_name='filtered_data.csv', mime='text/csv')
+                    # Create a download tab for PDF or JPG
+                    st.subheader('Download Dashboard')
+                    download_format = st.radio("Select Download Format", ("PDF", "JPG"))
+                    if st.button("Download"):
+                        if download_format == "PDF":
+                            pdf = FPDF()
+                            pdf.add_page()
+                            pdf.set_font("Arial", size=12)
+                            pdf.cell(200, 10, txt="Dashboard", ln=True, align='C')
+                            # Add summary metrics
+                            pdf.cell(200, 10, txt="Summary Metrics", ln=True)
+                            for metric, value in summary_metrics.items():
+                                pdf.cell(200, 10, txt=f"{metric}: {value}", ln=True)
+                            # Save the PDF
+                            pdf.output("/mnt/data/dashboard.pdf")
+                            with open("/mnt/data/dashboard.pdf", "rb") as file:
+                                st.download_button(label="Download PDF", data=file, file_name="dashboard.pdf", mime="application/pdf")
+                        elif download_format == "JPG":
+                            # Generate JPG using imgkit
+                            options = {'format': 'jpg', 'quality': '100'}
+                            imgkit.from_file('/mnt/data/dashboard.html', '/mnt/data/dashboard.jpg', options=options)
+                            with open("/mnt/data/dashboard.jpg", "rb") as file:
+                                st.download_button(label="Download JPG", data=file, file_name="dashboard.jpg", mime="image/jpeg")
     except Exception as e:
         st.error(f"An error occurred: {e}")
 else:
     st.info('Please upload a CSV file to proceed.')
-
 # Run the Streamlit app
 if __name__ == '__main__':
-    st.write('By ABD')
+    st.write('By Abd')
