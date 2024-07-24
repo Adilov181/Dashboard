@@ -5,7 +5,6 @@ import altair as alt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from fpdf import FPDF
-import imgkit
 import plotly.express as px
 
 # Set page title
@@ -30,7 +29,8 @@ if uploaded_file is not None:
             else:
                 start_date, end_date = data['Date'].min(), data['Date'].max()
             # Filter data based on date range
-            filtered_data = data[(data['Date'] >= start_date) & (data['Date'] <= end_date)]
+            mask = (data['Date'] >= start_date) & (data['Date'] <= end_date)
+            filtered_data = data.loc[mask]
             if filtered_data.empty:
                 st.warning("No data available for the selected date range.")
             else:
@@ -58,9 +58,9 @@ if uploaded_file is not None:
                     }
                     st.table(pd.DataFrame(summary_metrics))
                     st.subheader('Statistics')
-                    st.write(filtered_data.describe())                    
+                    st.write(filtered_data.describe())                   
                     # Display selected charts
-                    chart_cols = st.columns(len(chart_types))                 
+                    chart_cols = st.columns(len(chart_types))                    
                     for idx, chart_type in enumerate(chart_types):
                         with chart_cols[idx % len(chart_cols)]:
                             st.subheader(chart_type)                         
@@ -70,7 +70,6 @@ if uploaded_file is not None:
                                     y=selected_column
                                 )
                                 st.altair_chart(line_chart, use_container_width=True)
-
                             elif chart_type == "Bar Chart":
                                 bar_chart = alt.Chart(filtered_data).mark_bar().encode(
                                     x='Date:T',
