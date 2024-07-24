@@ -4,7 +4,6 @@ import numpy as np
 import altair as alt
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 # Set page title
 st.title('Enhanced Dashboard with Streamlit')
 # File upload
