@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import altair as alt
 
 # Set page title
-st.title('Simple Dashboard with Streamlit')
+st.title('Enhanced Dashboard with Streamlit')
 # File upload
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
@@ -13,7 +14,7 @@ if uploaded_file is not None:
         if 'Date' not in data.columns:
             st.error("The CSV file must contain a 'Date' column.")
         else:
-            data['Date'] = pd.to_datetime(data['Date'])          
+            data['Date'] = pd.to_datetime(data['Date'])           
             # Sidebar filters
             st.sidebar.header('Filters')
             date_filter = st.sidebar.date_input('Select a date range', [data['Date'].min(), data['Date'].max()])
@@ -32,14 +33,31 @@ if uploaded_file is not None:
                 if not numerical_columns.any():
                     st.error("The CSV file must contain numerical columns for visualization.")
                 else:
-                    selected_column = st.sidebar.selectbox("Select a column to visualize", numerical_columns)                  
+                    selected_column = st.sidebar.selectbox("Select a column to visualize", numerical_columns)                 
                     # Main panel
+                    st.subheader('Summary Metrics')
+                    st.metric(label="Average", value=filtered_data[selected_column].mean())
+                    st.metric(label="Sum", value=filtered_data[selected_column].sum())
+                    st.metric(label="Max", value=filtered_data[selected_column].max())
+                    st.metric(label="Min", value=filtered_data[selected_column].min())                
                     st.subheader('Line Chart')
-                    st.line_chart(filtered_data.set_index('Date')[selected_column])
+                    line_chart = alt.Chart(filtered_data).mark_line().encode(
+                        x='Date:T',
+                        y=selected_column
+                    )
+                    st.altair_chart(line_chart, use_container_width=True)
                     st.subheader('Bar Chart')
-                    st.bar_chart(filtered_data.set_index('Date')[selected_column])
+                    bar_chart = alt.Chart(filtered_data).mark_bar().encode(
+                        x='Date:T',
+                        y=selected_column
+                    )
+                    st.altair_chart(bar_chart, use_container_width=True)
                     st.subheader('Statistics')
                     st.write(filtered_data.describe())
+                    # Download filtered data
+                    st.subheader('Download Data')
+                    csv = filtered_data.to_csv(index=False)
+                    st.download_button(label="Download CSV", data=csv, file_name='filtered_data.csv', mime='text/csv')
     except Exception as e:
         st.error(f"An error occurred: {e}")
 else:
