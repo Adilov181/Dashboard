@@ -4,3 +4,5 @@ numpy==1.24.2
 altair==4.2.0
 seaborn==0.11.2
 matplotlib==3.3.4
+fpdf==1.7.2
+imgkit==1.2.2
