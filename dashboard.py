@@ -21,7 +21,7 @@ if uploaded_file is not None:
         if 'Date' not in data.columns:
             st.error("The CSV file must contain a 'Date' column.")
         else:
-            data['Date'] = pd.to_datetime(data['Date'])
+            data['Date'] = pd.to_datetime(data['Date']).dt.date
 
             # Sidebar filters
             st.sidebar.header('Filters')
@@ -35,7 +35,7 @@ if uploaded_file is not None:
                 start_date, end_date = data['Date'].min(), data['Date'].max()
 
             # Filter data based on date range
-            mask = (data['Date'] >= pd.to_datetime(start_date)) & (data['Date'] <= pd.to_datetime(end_date))
+            mask = (data['Date'] >= start_date) & (data['Date'] <= end_date)
             filtered_data = data.loc[mask]
 
             # Debugging info: Show the filtered data
@@ -151,29 +151,24 @@ if uploaded_file is not None:
                             pdf.add_page()
                             pdf.set_font("Arial", size=12)
                             pdf.cell(200, 10, txt="Dashboard", ln=True, align='C')
-
                             # Add summary metrics
                             pdf.cell(200, 10, txt="Summary Metrics", ln=True)
                             for metric, value in summary_metrics.items():
                                 pdf.cell(200, 10, txt=f"{metric}: {value}", ln=True)
-
                             # Save the PDF
                             pdf.output("/mnt/data/dashboard.pdf")
                             with open("/mnt/data/dashboard.pdf", "rb") as file:
                                 st.download_button(label="Download PDF", data=file, file_name="dashboard.pdf", mime="application/pdf")
-
                         elif download_format == "JPG":
                             # Generate JPG using imgkit
                             options = {'format': 'jpg', 'quality': '100'}
                             imgkit.from_file('/mnt/data/dashboard.html', '/mnt/data/dashboard.jpg', options=options)
                             with open("/mnt/data/dashboard.jpg", "rb") as file:
                                 st.download_button(label="Download JPG", data=file, file_name="dashboard.jpg", mime="image/jpeg")
-
     except Exception as e:
         st.error(f"An error occurred: {e}")
 else:
     st.info('Please upload a CSV file to proceed.')
-
 # Run the Streamlit app
 if __name__ == '__main__':
     st.write('by Abd')
