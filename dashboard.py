@@ -6,8 +6,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from fpdf import FPDF
 import imgkit
+import plotly.express as px
+
 # Set page title
-st.title('Enhanced Dashboard with Streamlit')
+st.title('Enhanced Dashboard')
 # File upload
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
@@ -40,7 +42,7 @@ if uploaded_file is not None:
                     selected_column = st.sidebar.selectbox("Select a column to visualize", numerical_columns)
                     chart_types = st.sidebar.multiselect(
                         "Select Chart Types",
-                        ["Line Chart", "Bar Chart", "Pie Chart", "Heatmap"],
+                        ["Line Chart", "Bar Chart", "Pie Chart", "Heatmap", "Scatter Plot", "Bubble Chart", "Box Plot", "Donut Chart", "Histogram", "Radar Chart"],
                         default=["Line Chart", "Bar Chart"]
                     )                    
                     # Summary Metrics in Tabular Form
@@ -56,19 +58,19 @@ if uploaded_file is not None:
                     }
                     st.table(pd.DataFrame(summary_metrics))
                     st.subheader('Statistics')
-                    st.write(filtered_data.describe())                  
+                    st.write(filtered_data.describe())                    
                     # Display selected charts
-                    chart_cols = st.columns(len(chart_types))                    
+                    chart_cols = st.columns(len(chart_types))                 
                     for idx, chart_type in enumerate(chart_types):
-                        with chart_cols[idx]:
-                            st.subheader(chart_type)
-                            
+                        with chart_cols[idx % len(chart_cols)]:
+                            st.subheader(chart_type)                         
                             if chart_type == "Line Chart":
                                 line_chart = alt.Chart(filtered_data).mark_line().encode(
                                     x='Date:T',
                                     y=selected_column
                                 )
                                 st.altair_chart(line_chart, use_container_width=True)
+
                             elif chart_type == "Bar Chart":
                                 bar_chart = alt.Chart(filtered_data).mark_bar().encode(
                                     x='Date:T',
@@ -85,6 +87,30 @@ if uploaded_file is not None:
                                 plt.figure(figsize=(6, 4))
                                 sns.heatmap(heatmap_data, annot=True, fmt="g", cmap='viridis')
                                 st.pyplot(plt)
+                            elif chart_type == "Scatter Plot":
+                                scatter_plot = alt.Chart(filtered_data).mark_circle(size=60).encode(
+                                    x='Date:T',
+                                    y=selected_column,
+                                    tooltip=[selected_column, 'Date']
+                                ).interactive()
+                                st.altair_chart(scatter_plot, use_container_width=True)                            
+                            elif chart_type == "Bubble Chart":
+                                bubble_chart = px.scatter(filtered_data, x='Date', y=selected_column, size=selected_column, color=selected_column, hover_name='Date', size_max=60)
+                                st.plotly_chart(bubble_chart)
+                            elif chart_type == "Box Plot":
+                                box_plot = px.box(filtered_data, x='Date', y=selected_column)
+                                st.plotly_chart(box_plot)
+                            elif chart_type == "Donut Chart":
+                                donut_chart = px.pie(filtered_data, values=selected_column, names='Date', hole=0.3)
+                                st.plotly_chart(donut_chart)
+                            elif chart_type == "Histogram":
+                                histogram = px.histogram(filtered_data, x=selected_column)
+                                st.plotly_chart(histogram)
+                            elif chart_type == "Radar Chart":
+                                radar_data = filtered_data[['Date', selected_column]].set_index('Date')
+                                radar_data = radar_data.T
+                                radar_chart = px.line_polar(radar_data, r=radar_data.columns, theta=radar_data.index, line_close=True)
+                                st.plotly_chart(radar_chart)
                     # Download filtered data
                     st.subheader('Download Data')
                     csv = filtered_data.to_csv(index=False)
@@ -118,4 +144,4 @@ else:
     st.info('Please upload a CSV file to proceed.')
 # Run the Streamlit app
 if __name__ == '__main__':
-    st.write('By Abd')
+    st.write('by Abd')
